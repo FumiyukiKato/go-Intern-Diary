@@ -3,9 +3,11 @@ package web
 //go:generate go-assets-builder --package=web --output=./templates-gen.go --strip-prefix="/templates/" --variable=Templates ../templates
 
 import (
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/dimfeld/httptreemux"
@@ -74,6 +76,17 @@ func (s *server) Handler() http.Handler {
 	handle("GET", "/signin", s.willSigninHandler())
 	handle("POST", "/signin", s.signinHandler())
 
+	handle("GET", "/diaries", s.diariesHandler())
+	handle("GET", "/diaries/new", s.willAddDiaryHandler())
+	handle("POST", "/diaries/new", s.addDiaryHandler())
+
+	handle("GET", "/diaries/:id/articles", s.articlesHandler())
+	handle("GET", "/diaries/:id/articles/new", s.willAddArticleHandler())
+	handle("POST", "/diaries/:id/articles/new", s.addArticleHandler())
+	handle("POST", "/diaries/:id/delete", s.deleteDiaryHandler())
+	handle("GET", "/diaries/:diary_id/articles/:article_id", s.articleHandler())
+	handle("POST", "/diaries/:diary_id/articles/:article_id/delete", s.deleteArticleHandler())
+
 	return router
 }
 
@@ -102,6 +115,10 @@ func (s *server) renderTemplate(w http.ResponseWriter, r *http.Request, tmpl str
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (s *server) getParams(r *http.Request, name string) string {
+	return httptreemux.ContextParams(r.Context())[name]
 }
 
 func (s *server) indexHandler() http.Handler {
@@ -142,11 +159,10 @@ func (s *server) signupHandler() http.Handler {
 			Value:   token,
 			Expires: expiresAt,
 		})
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, "/diaries", http.StatusSeeOther)
 	})
 }
 
-// DB内のセッショントークンは消す必要ないのかな
 func (s *server) signoutHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{
@@ -187,6 +203,213 @@ func (s *server) signinHandler() http.Handler {
 			Value:   token,
 			Expires: expiresAt,
 		})
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, "/diaries", http.StatusSeeOther)
+	})
+}
+
+func (s *server) diariesHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		var page uint64 = 1
+		var limit uint64 = 100 // todo
+		diaries, err := s.app.ListDiariesByUserID(user.ID, page, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		s.renderTemplate(w, r, "diaries.tmpl", map[string]interface{}{
+			"User":    user,
+			"Diaries": diaries,
+		})
+	})
+}
+
+func (s *server) willAddDiaryHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		s.renderTemplate(w, r, "add_diary.tmpl", map[string]interface{}{
+			"User": user,
+		})
+	})
+}
+
+func (s *server) addDiaryHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Error(w, "please login", http.StatusBadRequest)
+			return
+		}
+		name := r.FormValue("name")
+		if _, err := s.app.CreateNewDiary(user.ID, name); err != nil {
+			http.Error(w, "failed to create diary", http.StatusBadRequest)
+			return
+		}
+		http.Redirect(w, r, "/diaries", http.StatusSeeOther)
+	})
+}
+
+func (s *server) deleteDiaryHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Error(w, "please login", http.StatusBadRequest)
+			return
+		}
+		diaryID, err := strconv.ParseUint(s.getParams(r, "id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		if err := s.app.DeleteDiary(user.ID, diaryID); err != nil {
+			http.Error(w, fmt.Sprintf("failed to delete diary: %+v", err), http.StatusBadRequest)
+			return
+		}
+		http.Redirect(w, r, "/diaries", http.StatusSeeOther)
+	})
+}
+
+func (s *server) articlesHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Error(w, "please login", http.StatusBadRequest)
+			return
+		}
+		diaryID, err := strconv.ParseUint(s.getParams(r, "id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		diary, err := s.app.FindDiaryByID(diaryID, user.ID)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		var page uint64 = 1
+		var limit uint64 = 100 // todo
+		articles, err := s.app.ListArticlesByDiaryID(diaryID, page, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		s.renderTemplate(w, r, "articles.tmpl", map[string]interface{}{
+			"User":     user,
+			"Diary":    diary,
+			"Articles": articles,
+		})
+	})
+}
+
+func (s *server) willAddArticleHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Error(w, "please login", http.StatusBadRequest)
+			return
+		}
+		diaryID, err := strconv.ParseUint(s.getParams(r, "id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		diary, err := s.app.FindDiaryByID(diaryID, user.ID)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		s.renderTemplate(w, r, "add_article.tmpl", map[string]interface{}{
+			"User":  user,
+			"Diary": diary,
+		})
+	})
+}
+
+func (s *server) addArticleHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Error(w, "please login", http.StatusBadRequest)
+			return
+		}
+		diaryID, err := strconv.ParseUint(s.getParams(r, "id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		title, content := r.FormValue("title"), r.FormValue("content")
+		if _, err := s.app.CreateNewArticle(diaryID, title, content); err != nil {
+			http.Error(w, "failed to create article", http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, r, fmt.Sprintf("/diaries/%d/articles", diaryID), http.StatusSeeOther)
+	})
+}
+
+func (s *server) articleHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Error(w, "please login", http.StatusBadRequest)
+			return
+		}
+		diaryID, err := strconv.ParseUint(s.getParams(r, "diary_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		articleID, err := strconv.ParseUint(s.getParams(r, "article_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		diary, err := s.app.FindDiaryByID(diaryID, user.ID)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		article, err := s.app.FindArticleByID(articleID, diaryID)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		s.renderTemplate(w, r, "article.tmpl", map[string]interface{}{
+			"User":    user,
+			"Diary":   diary,
+			"Article": article,
+		})
+	})
+}
+
+func (s *server) deleteArticleHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := s.findUser(r)
+		if user == nil {
+			http.Error(w, "please login", http.StatusBadRequest)
+			return
+		}
+		diaryID, err := strconv.ParseUint(s.getParams(r, "diary_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		articleID, err := strconv.ParseUint(s.getParams(r, "article_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid diary id", http.StatusBadRequest)
+			return
+		}
+		if err := s.app.DeleteArticle(articleID, diaryID); err != nil {
+			http.Error(w, fmt.Sprintf("failed to delete diary: %+v", err), http.StatusBadRequest)
+			return
+		}
+		http.Redirect(w, r, fmt.Sprintf("/diaries/%d/articles", diaryID), http.StatusSeeOther)
 	})
 }
