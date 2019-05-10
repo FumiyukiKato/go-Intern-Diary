@@ -14,6 +14,7 @@ import (
 	"github.com/justinas/nosurf"
 
 	"github.com/hatena/go-Intern-Diary/model"
+	"github.com/hatena/go-Intern-Diary/resolver"
 	"github.com/hatena/go-Intern-Diary/service"
 )
 
@@ -86,6 +87,15 @@ func (s *server) Handler() http.Handler {
 	handle("POST", "/diaries/:id/delete", s.deleteDiaryHandler())
 	handle("GET", "/diaries/:diary_id/articles/:article_id", s.articleHandler())
 	handle("POST", "/diaries/:diary_id/articles/:article_id/delete", s.deleteArticleHandler())
+
+	handle("GET", "/graphiql", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		templates["graphiql.tmpl"].ExecuteTemplate(w, "graphiql.tmpl", nil)
+	}))
+
+	router.UsingContext().Handler("POST", "/query",
+		s.attachLoaderMiddleware(
+			s.resolveUserMiddleware(
+				loggingMiddleware(headerMiddleware(resolver.NewHandler(s.app))))))
 
 	return router
 }

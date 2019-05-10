@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hatena/go-Intern-Diary/model"
+	"github.com/jmoiron/sqlx"
 )
 
 var articleNotFoundError = model.NotFoundError("article")
@@ -35,7 +36,7 @@ func (r *repository) CreateNewArticle(diaryID uint64, title string, content stri
 	if err != nil {
 		return nil, err
 	}
-	return &model.Article{ID: id, Title: title, DiaryID: diaryID, UpdatedAt: now}, nil
+	return &model.Article{ID: id, Title: title, Content: content, DiaryID: diaryID, UpdatedAt: now}, nil
 }
 
 func (r *repository) FindArticleByID(articleID, diaryID uint64) (*model.Article, error) {
@@ -61,4 +62,66 @@ func (r *repository) DeleteArticle(articleID, diaryID uint64) (err error) {
 		articleID, diaryID,
 	)
 	return
+}
+
+func (r *repository) ListArticlesByIDs(articleIDs []uint64) ([]*model.Article, error) {
+	if len(articleIDs) == 0 {
+		return nil, nil
+	}
+	articles := make([]*model.Article, len(articleIDs))
+	query, args, err := sqlx.In(
+		`SELECT id, title, content, diary_id, updated_at FROM article
+			WHERE id IN (?)
+			ORDER BY created_at DESC`, articleIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = r.db.Select(&articles, query, args...)
+	return articles, err
+}
+
+func (r *repository) ListArticlesByDiaryIDs(diaryIDs []uint64) (map[uint64][]*model.Article, error) {
+	if len(diaryIDs) == 0 {
+		return nil, nil
+	}
+	query, args, err := sqlx.In(
+		`SELECT id, title, content, diary_id, updated_at FROM article
+			WHERE diary_id IN (?)`,
+		diaryIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.Queryx(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	articles := make(map[uint64][]*model.Article)
+	for rows.Next() {
+		var article model.Article
+		rows.Scan(
+			&article.ID,
+			&article.Title,
+			&article.Content,
+			&article.DiaryID,
+			&article.UpdatedAt,
+		)
+		articles[article.DiaryID] = append(articles[article.DiaryID], &article)
+	}
+	return articles, nil
+}
+
+func (r *repository) UpdateArticle(articleID uint64, title, content string) (*model.Article, error) {
+	now := time.Now()
+	_, err := r.db.Exec(
+		`UPDATE article SET title = ?, content = ?, updated_at = ?
+			WHERE id = ?`,
+		title, content, now, articleID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Article{ID: articleID, Title: title, Content: content, UpdatedAt: now}, nil
 }
