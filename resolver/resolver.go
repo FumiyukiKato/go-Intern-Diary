@@ -33,6 +33,9 @@ func currentUser(ctx context.Context) *model.User {
 }
 
 func (r *resolver) Visitor(ctx context.Context) (*userResolver, error) {
+	if currentUser(ctx) == nil {
+		return nil, errors.New("please login")
+	}
 	return &userResolver{currentUser(ctx)}, nil
 }
 
@@ -120,11 +123,7 @@ func (r *resolver) DeleteArticle(ctx context.Context, args struct{ ArticleID, Di
 	if err != nil {
 		return false, err
 	}
-	diaryID, err := strconv.ParseUint(args.DiaryID, 10, 64)
-	if err != nil {
-		return false, err
-	}
-	err = r.app.DeleteArticle(articleID, diaryID)
+	err = r.app.DeleteArticle(articleID)
 	if err != nil {
 		return false, err
 	}

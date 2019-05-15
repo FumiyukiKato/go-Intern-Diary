@@ -8,6 +8,12 @@ import {HttpLink} from "apollo-link-http";
 import {onError} from "apollo-link-error";
 import {InMemoryCache} from "apollo-cache-inmemory";
 
+import {GlobalHeader} from "./global_header";
+import {Index} from "./index";
+import {Diary} from "./diary";
+import {AddArticle} from "./addArticle"
+import {Me} from "./me"
+
 const client = new ApolloClient({
   link: ApolloLink.from([
     onError(({ graphQLErrors, networkError }) => {
@@ -30,10 +36,16 @@ const client = new ApolloClient({
 export const App: React.StatelessComponent = () => (
   <ApolloProvider client={client}>
     <BrowserRouter basename="/spa">
-      <>
-
-        // ...
-
+      <> {/*Todo  BrouserRouter直下は１つのタグしかだめってこと？あと何も中身がないこれはアリなのか */}
+        <GlobalHeader />
+        <main>
+          <Switch>
+            <Route exact path="/" component={Index} />
+            <Route exact path="/me" component={Me} />
+            <Route exact path="/diaries/:diaryId" component={Diary} />
+            <Route exact path="/diaries/:diaryId/add" component={AddArticle} />
+          </Switch>
+        </main>
       </>
     </BrowserRouter>
   </ApolloProvider>

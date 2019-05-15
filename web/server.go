@@ -88,9 +88,14 @@ func (s *server) Handler() http.Handler {
 	handle("GET", "/diaries/:diary_id/articles/:article_id", s.articleHandler())
 	handle("POST", "/diaries/:diary_id/articles/:article_id/delete", s.deleteArticleHandler())
 
+	handle("GET", "/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
 	handle("GET", "/graphiql", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		templates["graphiql.tmpl"].ExecuteTemplate(w, "graphiql.tmpl", nil)
+		templates["qgraphiql.tmpl"].ExecuteTemplate(w, "graphiql.tmpl", nil)
 	}))
+
+	handle("GET", "/spa/", s.spaHandler())
+	handle("GET", "/spa/*", s.spaHandler())
 
 	router.UsingContext().Handler("POST", "/query",
 		s.attachLoaderMiddleware(
@@ -416,10 +421,16 @@ func (s *server) deleteArticleHandler() http.Handler {
 			http.Error(w, "invalid diary id", http.StatusBadRequest)
 			return
 		}
-		if err := s.app.DeleteArticle(articleID, diaryID); err != nil {
+		if err := s.app.DeleteArticle(articleID); err != nil {
 			http.Error(w, fmt.Sprintf("failed to delete diary: %+v", err), http.StatusBadRequest)
 			return
 		}
 		http.Redirect(w, r, fmt.Sprintf("/diaries/%d/articles", diaryID), http.StatusSeeOther)
+	})
+}
+
+func (s *server) spaHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		templates["spa.tmpl"].ExecuteTemplate(w, "spa.tmpl", nil)
 	})
 }
