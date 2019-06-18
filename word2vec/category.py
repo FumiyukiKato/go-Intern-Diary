@@ -1,0 +1,242 @@
+sub_categories = {
+
+    101: "Music",
+	102: "Movies",
+	103: "Japanese Music",
+	104: "Non-Japanese Music",
+	105: "Japanese Movies",
+	106: "Non-Japanese Movies",
+
+	201: "Idols",
+	202: "Celebrities",
+	203: "Television",
+	204: "Johnnys",
+	205: "AKB48",
+	206: "Comedy",
+	207: "Musicians",
+
+	301: "Soccer",
+	302: "Basketball",
+	303: "Volleyball",
+	304: "Martial Arts",
+	305: "Golf",
+	306: "Tennis",
+	307: "Other Sports",
+
+	401: "Game Titles",
+	402: "Game Hardware",
+	403: "Game Companies",
+	404: "Table Games",
+	405: "Flipnote",
+	406: "Animal Crossing",
+	407: "Other Games",
+
+	501: "Vocaloid",
+	502: "Animation",
+	503: "Comics",
+	504: "Voice Actors",
+	505: "Fanzines",
+	506: "Yaoi",
+
+	601: "Books",
+	602: "Travel",
+	603: "Photography",
+	604: "Pets",
+	605: "Plants",
+	606: "Automobiles",
+	607: "Bicycles",
+	608: "Motorcycles",
+	609: "Railroads",
+	610: "DIY",
+	611: "Illustration",
+	612: "Other Hobbies",
+
+	701: "Internet",
+	702: "Tech",
+	703: "Gagdets",
+	704: "Hatena",
+	705: "Programming",
+	706: "Design",
+
+	801: "Cooking",
+	802: "Restaurants",
+	803: "Alcohol",
+	804: "Food",
+	805: "Drink",
+	806: "Recipes",
+	807: "Sweets",
+	808: "Packed Lunches",
+
+	901: "Fashion",
+	902: "Beauty",
+	903: "Cosmetics",
+	904: "Mens Fashion",
+	905: "Ladies Fashion",
+
+	1001: "Childcare",
+	1002: "Families",
+	1003: "Health",
+	1004: "Lifestyles",
+	1005: "Interior Accessories",
+	1006: "Other Life",
+
+	1101: "Society",
+	1102: "Knowledge",
+	1103: "History",
+	1104: "Other Learning And Culture",
+
+	1201: "Areas",
+	1202: "Spots",
+	1203: "Shops",
+	1204: "Events",
+
+	1301: "Chat",
+	1302: "Age Groups",
+	1303: "Personal Attributes",
+	1304: "Fun",
+	1305: "Other Etc"
+}
+
+main_categories = {
+    1: "Entertainment",
+	2: "ショービズ",
+	3: "Sports",
+	4: "Games",
+
+	# 5: "Animation And Comics",
+    5: "Animation",
+    14: "Comics",
+	6: "Hobbies",
+	7: "Computer",
+
+	8: "Gourmet",
+	9: "Style",
+	10: "Life",
+
+	# 11: "Leaning And Culture",
+    11: "Learning",
+    15: "Culture",
+	12: "Regional",
+	13: "Etc"
+}
+
+main_categories_ja = {
+    1: "エンターテイメント",
+	2: "ショービズ",
+	3: "スポーツ",
+	4: "ゲーム",
+
+    5: "アニメ",
+    14: "マンガ",
+	6: "趣味",
+	7: "コンピュータ",
+
+	8: "グルメ",
+	9: "スタイル",
+	10: "生活",
+
+    11: "勉強",
+    15: "文化",
+	12: "地域",
+	13: "その他"
+}
+
+sub_categories_ja = {
+
+    101: "音楽",
+	102: "映画",
+	103: "邦楽",
+	104: "洋楽",
+	105: "邦画",
+	106: "洋画",
+
+	201: "アイドル",
+	202: "セレブ",
+	203: "テレビ",
+	204: "ジャニーズ",
+	205: "AKB48",
+	206: "お笑い",
+	207: "ミュージシャン",
+
+	301: "サッカー",
+	302: "バスケ",
+	303: "バレーボール",
+	304: "武道",
+	305: "ゴルフ",
+	306: "テニス",
+	# 307: "Other Sports",
+
+	401: "ゲーム",
+	402: "PS4",
+	403: "ソニー",
+	404: "ボードゲーム",
+	405: "お絵かき",
+	406: "どうぶつの森",
+	# 407: "Other Games",
+
+	501: "ボカロ",
+	502: "アニメ",
+	503: "マンガ",
+	504: "声優",
+	505: "雑誌",
+	506: "BL",
+
+	601: "本",
+	602: "旅",
+	603: "写真",
+	604: "ペット",
+	605: "星",
+	606: "自動車",
+	607: "自転車",
+	608: "バイク",
+	609: "鉄道",
+	610: "DIY",
+	611: "イラスト",
+	# 612: "Other Hobbies",
+
+	701: "インターネット",
+	702: "技術",
+	703: "ガジェット",
+	704: "はてな",
+	705: "プログラミング",
+	706: "設計",
+
+	801: "料理",
+	802: "レストラン",
+	803: "お酒",
+	804: "食べ物",
+	805: "飲み物",
+	806: "レシピ",
+	807: "お菓子",
+	808: "弁当",
+
+	901: "ファッション",
+	902: "美容",
+	903: "化粧品",
+	904: "メンズ",
+	905: "レディース",
+
+	1001: "子育て",
+	1002: "家族",
+	1003: "健康",
+	1004: "ライフスタイル",
+	1005: "インテリア",
+	# 1006: "Other Life",
+
+	1101: "社会",
+	1102: "知識",
+	1103: "歴史",
+	# 1104: "Other Learning And Culture",
+    1105: "農業",
+
+	1201: "地区",
+	1202: "スポーツ",
+	1203: "ショップ",
+	1204: "イベント",
+
+	1301: "おしゃべり",
+	1302: "世代",
+	1303: "個性",
+	1304: "楽しみ",
+	# 1305: "Other Etc"
+}

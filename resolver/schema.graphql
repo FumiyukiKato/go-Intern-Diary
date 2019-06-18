@@ -4,7 +4,69 @@ schema {
 }
 
 type Query {
+    visitor(): User!
+    listCategories(): [Category!]!
+    getUser(userId: ID!): User!
+    getDiary(diaryId: ID!): Diary!
+    listArticles(diaryId: ID!, page: Int!): ArticleWithPageInfo!
+    listRecommededDiaries(diaryId: ID!): [Diary!]!
 }
 
 type Mutation {
+    createDiary(name: String!, tagWithCategories: [TagWithCategoryInput!]!): Diary!
+    deleteDiary(diaryId: ID!): Boolean!
+    postArticle(diaryId: ID!, title: String!, content: String!): Article!
+    updateArticle(articleId: ID!, title: String!, content: String!) : Article!
+    deleteArticle(articleId: ID!): Boolean!
+}
+
+type User {
+    id: ID!
+    name: String!
+    diaries: [Diary!]!
+}
+
+type Diary {
+    id: ID!
+    name: String!
+    articles: [Article!]!
+    tags: [Tag!]!
+    user: User!
+    canEdit: Boolean!
+}
+
+type Article {
+    id: ID!
+    diaryId: ID!
+    title: String!
+    content: String!
+}
+
+type PageInfo {
+    totalPage: Int!
+    currentPage: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+}
+
+type ArticleWithPageInfo {
+    articles: [Article!]!
+    pageInfo: PageInfo!
+}
+
+type Tag {
+    id: ID!
+    category_id: ID!
+    tag_name: String!
+    diaries: [Diary!]!
+}
+
+type Category {
+    id: Int!
+    category_name: String!
+}
+
+input TagWithCategoryInput {
+    tag_name: String!
+    category_id: Int!
 }
